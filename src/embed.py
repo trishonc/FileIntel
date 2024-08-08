@@ -7,6 +7,17 @@ import re
 from reader import read_pdf, read_doc, read_csv, read_pptx
 
 
+def embed_image(file: Dict, model: AutoModel) -> Any:
+    content = Image.open(file["path"])
+    return model.encode_image(content)
+
+
+def embed_string(string: str, model: AutoModel = None) -> Any:
+    if not model:
+        model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps") 
+    return model.encode_text(string)
+
+
 def add_chunks(client: QdrantClient, file_dict: Dict, model: AutoModel):
     if not model:
         model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps")
@@ -122,17 +133,6 @@ def add_csv(client: QdrantClient, file: Dict, model: AutoModel):
                     payload=payload
                 )],
         )
-
-
-def embed_image(file: Dict, model: AutoModel) -> Any:
-    content = Image.open(file["path"])
-    return model.encode_image(content)
-
-
-def embed_string(string: str, model: AutoModel = None) -> Any:
-    if not model:
-        model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps") 
-    return model.encode_text(string)
 
 
 def add_dir_embeddings(client: QdrantClient, dirs: List[Dict], model: AutoModel):   

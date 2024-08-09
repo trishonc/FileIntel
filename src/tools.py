@@ -33,6 +33,7 @@ def move_file(srcPath: str, targetPath: str) -> Dict:
             print(f"An error occurred: {str(e)}")
             return None
 
+
 def copy_file(srcPath: str, targetPath: str) -> Dict:
     try:
         og_stat = os.stat(srcPath)
@@ -79,6 +80,7 @@ def delete_file(filePath: str):
         print(f"An error occurred: {str(e)}")
         return None
 
+
 def rename_file(srcPath: str, newName: str) -> Dict:
     try:
         targetPath = os.path.join(os.path.dirname(srcPath), newName)
@@ -99,6 +101,7 @@ def rename_file(srcPath: str, newName: str) -> Dict:
         print(f"An error occurred: {str(e)}")
         return None
 
+
 def open_file(file_path: str):
     try:
         file_path = os.path.abspath(file_path)
@@ -116,6 +119,7 @@ def open_file(file_path: str):
     
     except Exception as e:
         print(f"An error occurred: {str(e)}")
+
 
 def goto_file(path: str):
     try:

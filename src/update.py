@@ -8,6 +8,7 @@ from transformers import AutoModel
 from search import id_search
 import json
 
+
 def process_filesystem(root_dirs: List[str], include_files: bool = True, include_dirs: bool = True) -> List[Dict]:
     items = []
     
@@ -16,6 +17,7 @@ def process_filesystem(root_dirs: List[str], include_files: bool = True, include
         'pdf': ('.pdf',),
         'csv': ('.csv',),
         'doc': ('.doc', '.docx'),
+        'ppt': ('.ppt', '.pptx'),
         'ppt': ('.ppt', '.pptx'),
     }
     
@@ -69,6 +71,7 @@ def process_filesystem(root_dirs: List[str], include_files: bool = True, include
                         items.append(create_item_dict(file_path, file_type))
 
     return items
+
 
 def get_embedded_items(client: QdrantClient, item_type: str = "all") -> List[Dict]:
     items = []
@@ -141,6 +144,7 @@ def remove_items(client: QdrantClient, items_rm: List[Dict], item_type: str = "f
             print(f"Removed {item_type} with path {item["path"]} from the vector database.")
         else:
             print(f"No {item_type} found with inode {inode_id} in the vector database.")
+
 
 def move_items(client: QdrantClient, items_mv: List[Dict], model: AutoModel = None, item_type: str = "file"):
     if not model:

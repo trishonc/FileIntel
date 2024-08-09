@@ -4,6 +4,7 @@ from embed import embed_string
 from transformers import AutoModel
 from typing import List
 
+
 def vec_search(client: QdrantClient, query: str, model: AutoModel): 
     result = client.search(
     collection_name="files",
@@ -11,6 +12,7 @@ def vec_search(client: QdrantClient, query: str, model: AutoModel):
     limit=1)
 
     return result[0]
+
 
 def id_search(client: QdrantClient, inode_id: str, with_vectors=False) -> List[ScoredPoint]:
      search_result = client.search(

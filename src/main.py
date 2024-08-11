@@ -4,6 +4,9 @@ from query import parse_query
 from update import update
 from transformers import AutoModel
 import torch
+from llm import call_agent
+from mlx_lm import load
+
 
 def get_device():
     if torch.cuda.is_available():
@@ -35,19 +38,23 @@ def main():
         )
         print("New collection created.")
 
-    print("Loading model...")
+    print("Loading embedding model...")
     device = get_device()
-    model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to(device)
+    embedding_model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to(device)
+
+    print("Loading llm...")
+    llm, tokenizer = load("mlx-community/gemma-2-2b-it-4bit")
 
     print("Updating...")
     dirs = args.dirs if args.dirs else []
-    update(client, dirs, model)
+    update(client, dirs, embedding_model)
 
     while True:
         query = input("Enter query (or 'exit' to quit): ")
         if query.lower() == "exit":
             break
-        parse_query(client, query, model)
+        # parse_query(client, query, model)
+        call_agent(query, llm, tokenizer)
 
 if __name__ == "__main__":
     main()

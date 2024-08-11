@@ -138,3 +138,7 @@ def goto_file(path: str):
 
     except Exception as e:
         print(f"An error occurred: {str(e)}")
+
+
+def get_context(query: str) -> str:
+    pass

@@ -1,9 +1,10 @@
-from search import vec_search
-from tools import open_file, move_file, copy_file, rename_file, delete_file, goto_file
+from search import vec_search, rag_search
+from tools import *
 from qdrant_client import QdrantClient
 from typing import List
 from update import move_items, remove_items, copy_files
 from transformers import AutoModel
+from llm import rag_call, parse_response
 
 
 def clean_query(query: str, keywords: List[str]):
@@ -12,7 +13,7 @@ def clean_query(query: str, keywords: List[str]):
     return query.strip()
 
 
-def parse_query(client: QdrantClient, query: str, model: AutoModel):
+def parse_query(client: QdrantClient, query: str, llm, tokenizer, model: AutoModel):
     query = query.lower()
     if query.split()[0] == "open":
         cleaned_query = clean_query(query, ["open"])
@@ -80,5 +81,9 @@ def parse_query(client: QdrantClient, query: str, model: AutoModel):
             print(f"File '{file_path}' has been deleted.")
         else:
             print("Deletion cancelled.")
+    elif "?" in query:
+        context = get_context(client, query, model)
+        response = parse_response(rag_call(query, context, llm, tokenizer))
+        print(response["content"])
     else:
         print("Unsupported operation or invalid query format.")

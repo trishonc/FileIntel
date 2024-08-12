@@ -2,6 +2,7 @@ import shutil
 import os
 from datetime import datetime
 from typing import Dict
+from search import rag_search
 
 
 def move_file(srcPath: str, targetPath: str) -> Dict:
@@ -140,5 +141,9 @@ def goto_file(path: str):
         print(f"An error occurred: {str(e)}")
 
 
-def get_context(query: str) -> str:
-    pass
+def get_context(client, query: str, model) -> str:
+    context = ""
+    chunks = rag_search(client, query, model)
+    for chunk in chunks:
+        context += chunk.payload["content"]
+    return context

@@ -1,3 +1,9 @@
+PROMPT_TEMPLATE = """<start_of_turn>user
+{}
+<end_of_turn>
+<start_of_turn>model
+"""
+
 SYSTEM_PROMPT = """
 You are an AI assistant capable of handling a wide range of tasks, with a specialization in file management. Your role is to interpret user queries and respond appropriately. For file management tasks that require you do to something with files on the operating system, you'll extract key information and select the appropriate tool, formatting the response in JSON. For all other queries, you'll respond normally as a helpful AI assistant.
 
@@ -41,4 +47,17 @@ The capital of France is Paris. It's one of the most famous and visited cities i
 
 Now, process the following query and provide the appropriate response:
 
+{}
+"""
+
+
+RAG_PROMPT = """You are a helpful AI assistant and you should answer the user's query based on the provided context. Try to answer briefly and clearly. 
+
+Here is the context:
+
+{}
+
+Here is the user's query:
+
+{}
 """

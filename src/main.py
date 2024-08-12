@@ -53,8 +53,8 @@ def main():
         query = input("Enter query (or 'exit' to quit): ")
         if query.lower() == "exit":
             break
-        # parse_query(client, query, model)
-        call_agent(query, llm, tokenizer)
+        parse_query(client, query, llm, tokenizer, embedding_model)
+        # call_agent(client, query, llm, tokenizer, embedding_model)
 
 if __name__ == "__main__":
     main()

@@ -4,3 +4,4 @@ __pycache__/
 tmp/
 .DS_Store
 fine_tune/
+nomic_embed.py

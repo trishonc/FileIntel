@@ -3,18 +3,10 @@ from qdrant_client import QdrantClient, models
 from query import parse_query
 from update import update
 from transformers import AutoModel
-import torch
-from llm import call_agent
+from llm.agent import call_agent
 from mlx_lm import load
+from utils import get_device
 
-
-def get_device():
-    if torch.cuda.is_available():
-        return "cuda"
-    elif torch.backends.mps.is_available():
-        return "mps"
-    else:
-        return "cpu"
 
 def main():
     parser = argparse.ArgumentParser(description="Qdrant vector database script")
@@ -55,6 +47,7 @@ def main():
             break
         # parse_query(client, query, llm, tokenizer, embedding_model)
         call_agent(client, query, llm, tokenizer, embedding_model)
+
 
 if __name__ == "__main__":
     main()

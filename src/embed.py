@@ -14,7 +14,7 @@ def embed_image(file: Dict, model: AutoModel) -> Any:
 
 def embed_string(string: str, model: AutoModel = None) -> Any:
     if not model:
-        model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps") 
+        model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps")
     return model.encode_text(string)
 
 

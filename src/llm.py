@@ -12,34 +12,36 @@ def call_agent(client, query, llm, tokenizer, embedding_model):
     if parsed_response["type"] == "tool_call":
         execute_tool(client, parsed_response, llm, tokenizer, embedding_model)
     else:
-        print(parsed_response["content"])
+        print(format_response(parsed_response["content"]))
 
 
 def initial_call(query, llm, tokenizer):
-    prompt = PROMPT_TEMPLATE.format(SYSTEM_PROMPT.format(query))
+    sys_prompt = SYSTEM_PROMPT + query
+    prompt = PROMPT_TEMPLATE.format(sys_prompt)
     response = generate(llm, tokenizer, prompt=prompt, verbose=False, max_tokens=500)
     return response
 
 
 def rag_call(query, context, llm, tokenizer):
-    prompt = PROMPT_TEMPLATE.format(RAG_PROMPT.format(context, query))
+    rag_prompt = RAG_PROMPT.format(context, query)
+    prompt = PROMPT_TEMPLATE.format(rag_prompt)
     response = generate(llm, tokenizer, prompt=prompt, verbose=False, max_tokens=500)
     return response
 
 
 def execute_tool(client, parsed_response, llm, tokenizer, embedding_model):
     tool = parsed_response["tool"]
-    attr = parsed_response["attributes"]
+    arg = parsed_response["args"]
 
     if tool == "open_file":
-        file = vec_search(client, attr["target"], embedding_model).payload["path"]
+        file = vec_search(client, arg["target"], embedding_model).payload["path"]
         open_file(file)
     elif tool == "goto_file":
-        file = vec_search(client, attr["target"], embedding_model).payload["path"]
+        file = vec_search(client, arg["target"], embedding_model).payload["path"]
         goto_file(file)
     elif tool == "move_file":
-        src = vec_search(client, attr["src"], embedding_model)
-        target = vec_search(client, attr["target"], embedding_model)
+        src = vec_search(client, arg["src"], embedding_model)
+        target = vec_search(client, arg["target"], embedding_model)
         if "dir" in target.payload["type"]:
             confirmation = input(f"Are you sure you want to move '{src.payload['path']}' to '{target.payload['path']}'? (y/N): ").lower()
             if confirmation == 'y':
@@ -52,8 +54,8 @@ def execute_tool(client, parsed_response, llm, tokenizer, embedding_model):
         else:
             print("Can't move file to another file. Use rename instead.")
     elif tool == "copy_file":
-        src = vec_search(client, attr["src"], embedding_model)
-        target = vec_search(client, attr["target"], embedding_model)
+        src = vec_search(client, arg["src"], embedding_model)
+        target = vec_search(client, arg["target"], embedding_model)
         if "dir" not in target.payload["type"]:
             print("Can't copy file to another file.")
         else:
@@ -66,17 +68,17 @@ def execute_tool(client, parsed_response, llm, tokenizer, embedding_model):
             else:
                 print("Copy operation cancelled.")
     elif tool == "rename_file":
-        src = vec_search(client, attr["src"], embedding_model)
-        confirmation = input(f"Are you sure you want to rename '{src.payload['path']}' to '{attr["new_name"]}'? (y/N): ").lower()
+        src = vec_search(client, arg["src"], embedding_model)
+        confirmation = input(f"Are you sure you want to rename '{src.payload['path']}' to '{arg["new_name"]}'? (y/N): ").lower()
         if confirmation == 'y':
-            new_file = rename_file(src.payload["path"], attr["new_name"])
+            new_file = rename_file(src.payload["path"], arg["new_name"])
             if new_file:
                 move_items(client, [new_file], embedding_model)
                 print(f"File renamed to {new_file}")
         else:
             print("Rename operation cancelled.")
     elif tool == "delete_file":
-        file = vec_search(client, attr["target"], embedding_model)
+        file = vec_search(client, arg["target"], embedding_model)
         file_path = file.payload["path"]
         confirmation = input(f"Are you sure you want to delete '{file_path}'? (y/N): ").lower()
         if confirmation == 'y':
@@ -85,10 +87,11 @@ def execute_tool(client, parsed_response, llm, tokenizer, embedding_model):
             print(f"File '{file_path}' has been deleted.")
         else:
             print("Deletion cancelled.")
-    elif tool == "get_context":
-        context = get_context(client, attr["query"], embedding_model)
-        response = rag_call(attr["query"], context, llm, tokenizer)
-        print(parse_response(response))
+    elif tool == "local_search":
+        context = local_search(client, arg["query"], embedding_model)
+        response = rag_call(arg["query"], context, llm, tokenizer)
+        response = response.replace("<end_of_turn>", "").strip()   
+        print(format_response(response))
     else:
         print(f"Invalid tool name - {tool}")
 
@@ -104,12 +107,12 @@ def parse_response(response):
             parsed_json = json.loads(json_content)
 
             tool_name = parsed_json.get('tool')
-            attributes = parsed_json.get('attributes', {})
+            args = parsed_json.get('args', {})
 
             return {
                 'type': 'tool_call',
                 'tool': tool_name,
-                'attributes': attributes
+                'args': args
             }
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON: {e}")
@@ -122,3 +125,9 @@ def parse_response(response):
             'type': 'normal_response',
             'content': response
         }
+
+
+def format_response(response):
+    response = response.replace('/n', '\n')
+    response = response.replace('*', '')
+    return response

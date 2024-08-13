@@ -82,8 +82,16 @@ def parse_query(client: QdrantClient, query: str, llm, tokenizer, model: AutoMod
         else:
             print("Deletion cancelled.")
     elif "?" in query:
-        context = get_context(client, query, model)
+        context = local_search(client, query, model)
         response = parse_response(rag_call(query, context, llm, tokenizer))
         print(response["content"])
     else:
-        print("Unsupported operation or invalid query format.")
+        print("""Unsupported operation or invalid query format. Valid query formats are:
+                 Open <target>
+                 Go to <target>
+                 Delete <target>
+                 Rename <target> to <new_name>
+                 Move <source> to <target>
+                 Copy <source> to <target>
+                 <query> ?
+              """)

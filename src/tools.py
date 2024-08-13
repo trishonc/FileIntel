@@ -141,7 +141,7 @@ def goto_file(path: str):
         print(f"An error occurred: {str(e)}")
 
 
-def get_context(client, query: str, model) -> str:
+def local_search(client, query: str, model) -> str:
     context = ""
     chunks = rag_search(client, query, model)
     for chunk in chunks:

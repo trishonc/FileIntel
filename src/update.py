@@ -1,12 +1,12 @@
-from qdrant_client import QdrantClient, models
+from qdrant_client import models
 from embed import add_all, embed_string
 from typing import List, Dict, Tuple
 import os
 from datetime import datetime
 import uuid
-from transformers import AutoModel
 from search import id_search
 import json
+from globals import client
 
 
 def process_filesystem(root_dirs: List[str], include_files: bool = True, include_dirs: bool = True) -> List[Dict]:
@@ -73,7 +73,7 @@ def process_filesystem(root_dirs: List[str], include_files: bool = True, include
     return items
 
 
-def get_embedded_items(client: QdrantClient, item_type: str = "all") -> List[Dict]:
+def get_embedded_items(item_type: str = "all") -> List[Dict]:
     items = []
     seen_ids = set()
     
@@ -118,8 +118,8 @@ def compare_items(current_items: List[Dict], embedded_items: List[Dict], item_ty
                 elif item_type == "dir":
                     items_mv.append(current_item)
             elif item_type == "file" and current_item["modified"] != embedded_item["modified"]:
-                    items_add.append(current_item)
-                    items_rm.append(embedded_item)
+                items_add.append(current_item)
+                items_rm.append(embedded_item)
         else:
             items_add.append(current_item)
 
@@ -130,7 +130,7 @@ def compare_items(current_items: List[Dict], embedded_items: List[Dict], item_ty
     return items_rm, items_add, items_mv
 
 
-def remove_items(client: QdrantClient, items_rm: List[Dict], item_type: str = "file"):
+def remove_items(items_rm: List[Dict], item_type: str = "file"):
     for item in items_rm:
         inode_id = item["id"]
         search_result = id_search(client, inode_id)
@@ -141,21 +141,18 @@ def remove_items(client: QdrantClient, items_rm: List[Dict], item_type: str = "f
                 collection_name="files",
                 points_selector=models.PointIdsList(points=point_ids)
             )
-            print(f"Removed {item_type} with path {item["path"]} from the vector database.")
+            print(f"Removed {item_type} with path {item['path']} from the vector database.")
         else:
             print(f"No {item_type} found with inode {inode_id} in the vector database.")
 
 
-def move_items(client: QdrantClient, items_mv: List[Dict], model: AutoModel = None, item_type: str = "file"):
-    if not model:
-        model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps")
-
+def move_items(items_mv: List[Dict], item_type: str = "file"):
     for item in items_mv:
         inode_id = item["id"]
         new_name = item["name"]
         new_path = item["path"]
 
-        search_result = id_search(client, inode_id, with_vectors=True)
+        search_result = id_search(inode_id, with_vectors=True)
 
         if search_result:
             updated_points = []
@@ -165,9 +162,9 @@ def move_items(client: QdrantClient, items_mv: List[Dict], model: AutoModel = No
                 updated_payload["path"] = new_path
 
                 if updated_payload["type"] == f"{item_type}_name":
-                    new_vector = embed_string(new_name, model)
+                    new_vector = embed_string(new_name)
                 elif updated_payload["type"] == f"{item_type}_path":
-                    new_vector = embed_string(new_path, model)
+                    new_vector = embed_string(new_path)
                 else:
                     new_vector = point.vector
 
@@ -186,13 +183,11 @@ def move_items(client: QdrantClient, items_mv: List[Dict], model: AutoModel = No
             print(f"{item_type.capitalize()} with inode {inode_id} not found in the vector database.")
 
 
-def copy_files(client: QdrantClient, files_cp: List[Dict], model: AutoModel = None):
-    if not model:
-        model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps") 
+def copy_files(files_cp: List[Dict]):
     for file_cp in files_cp:
         og_id = file_cp["og_id"]
         
-        search_result = id_search(client, og_id, with_vectors=True)
+        search_result = id_search(og_id, with_vectors=True)
 
         new_points = []
         for point in search_result:
@@ -223,29 +218,25 @@ def copy_files(client: QdrantClient, files_cp: List[Dict], model: AutoModel = No
             print(f"File with original ID {og_id} not found in the vector database.")
 
 
-def update(client: QdrantClient, dirs: List[str], model: AutoModel = None):
+def update(dirs: List[str]):
     current_files = process_filesystem(dirs, include_dirs=False)
     current_dirs = process_filesystem(dirs, include_files=False)
 
-    embedded_files = get_embedded_items(client, item_type="file")
-    embedded_dirs = get_embedded_items(client, item_type="dir")
+    embedded_files = get_embedded_items(item_type="file")
+    embedded_dirs = get_embedded_items(item_type="dir")
 
     files_rm, files_add, files_mv = compare_items(current_files, embedded_files, item_type="file")
     dirs_rm, dirs_add, dirs_mv = compare_items(current_dirs, embedded_dirs, item_type="dir")
 
-    if files_mv or files_add or dirs_mv or dirs_add:
-        if not model:
-            model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps")
-
     if files_rm:
-        remove_items(client, files_rm, item_type="file")
+        remove_items(files_rm, item_type="file")
     if dirs_rm:
-        remove_items(client, dirs_rm, item_type="directory")
+        remove_items(dirs_rm, item_type="directory")
 
     if files_mv:
-        move_items(client, files_mv,  model=model, item_type="file")
+        move_items(files_mv, item_type="file")
     if dirs_mv:
-        move_items(client, dirs_mv, model=model, item_type="directory")
+        move_items(dirs_mv, item_type="directory")
 
     if files_add or dirs_add:
-        add_all(client, files_add, dirs_add, model)
+        add_all(files_add, dirs_add)

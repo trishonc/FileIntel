@@ -1,11 +1,9 @@
 import argparse
-from qdrant_client import QdrantClient, models
+from qdrant_client import models
 from query import parse_query
 from update import update
-from transformers import AutoModel
 from llm.agent import call_agent
-from mlx_lm import load
-from utils import get_device
+from globals import *
 
 
 def main():
@@ -13,8 +11,6 @@ def main():
     parser.add_argument('-d', '--dirs', nargs='+', help='Directories to process', default=[])
     parser.add_argument('-r', '--recreate', action='store_true', help='Recreate the database')
     args = parser.parse_args()
-
-    client = QdrantClient(path="/tmp/qdrant/db")
 
     if args.recreate or not client.collection_exists(collection_name="files"):
         if args.recreate and client.collection_exists(collection_name="files"):
@@ -30,23 +26,17 @@ def main():
         )
         print("New collection created.")
 
-    print("Loading embedding model...")
-    device = get_device()
-    embedding_model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to(device)
-
-    print("Loading llm...")
-    llm, tokenizer = load("mlx-community/gemma-2-2b-it-4bit")
 
     print("Updating...")
     dirs = args.dirs if args.dirs else []
-    update(client, dirs, embedding_model)
+    update(dirs)
 
     while True:
         query = input("Enter query (or 'exit' to quit): ")
         if query.lower() == "exit":
             break
-        # parse_query(client, query, llm, tokenizer, embedding_model)
-        call_agent(client, query, llm, tokenizer, embedding_model)
+        # parse_query(query)
+        call_agent(query)
 
 
 if __name__ == "__main__":

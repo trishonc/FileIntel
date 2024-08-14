@@ -1,27 +1,22 @@
-from transformers import AutoModel
-from qdrant_client import QdrantClient, models
+from qdrant_client import models
 from PIL import Image
 import uuid
 from typing import List, Dict, Any
 import re
 from reader import read_pdf, read_doc, read_csv, read_pptx
+from globals import client, embedding_model
 
 
-def embed_image(file: Dict, model: AutoModel) -> Any:
-    content = Image.open(file["path"])
-    return model.encode_image(content)
+def embed_image(file: Dict) -> Any:
+    image = Image.open(file["path"])
+    return embedding_model.encode_image(image)
 
 
-def embed_string(string: str, model: AutoModel = None) -> Any:
-    if not model:
-        model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps")
-    return model.encode_text(string)
+def embed_string(string: str) -> Any:
+    return embedding_model.encode_text(string)
 
 
-def add_chunks(client: QdrantClient, file_dict: Dict, model: AutoModel):
-    if not model:
-        model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps")
-    
+def add_chunks(file_dict: Dict):
     with open(file_dict["path"], 'r') as file:
         text = file.read()
     
@@ -35,27 +30,24 @@ def add_chunks(client: QdrantClient, file_dict: Dict, model: AutoModel):
             points=[
                 models.PointStruct(
                     id=str(uuid.uuid4()),
-                    vector=embed_string(chunk, model),
+                    vector=embed_string(chunk),
                     payload=payload
                 )],
         )
 
 
-def add_image(client: QdrantClient, file: Dict, model: AutoModel):
-    if not model:
-        model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps")    
-     
+def add_image(file: Dict):
     client.upsert(
         collection_name="files",
         points=[
             models.PointStruct(
                 id=str(uuid.uuid4()),
-                vector=embed_image(file, model),
+                vector=embed_image(file),
                 payload=file
             )],
     )
 
-def add_pdf(client: QdrantClient, file: Dict, model: AutoModel):
+def add_pdf(file: Dict):
     pages = read_pdf(file["path"])
 
     for page in pages:
@@ -70,13 +62,13 @@ def add_pdf(client: QdrantClient, file: Dict, model: AutoModel):
                 points=[
                     models.PointStruct(
                         id=str(uuid.uuid4()),
-                        vector=embed_string(chunk, model),
+                        vector=embed_string(chunk),
                         payload=payload
                     )],
             )
 
     
-def add_doc(client: QdrantClient, file: Dict, model: AutoModel):
+def add_doc(file: Dict):
     text = read_doc(file["path"])
 
     chunks = chunk_document(preprocess_file(text))
@@ -89,13 +81,13 @@ def add_doc(client: QdrantClient, file: Dict, model: AutoModel):
             points=[
                 models.PointStruct(
                     id=str(uuid.uuid4()),
-                    vector=embed_string(chunk, model),
+                    vector=embed_string(chunk),
                     payload=payload
                 )],
         )
 
 
-def add_pptx(client: QdrantClient, file: Dict, model: AutoModel):
+def add_pptx(file: Dict):
     slides = read_pptx(file["path"])
 
     for slide in slides:
@@ -110,13 +102,13 @@ def add_pptx(client: QdrantClient, file: Dict, model: AutoModel):
                 points=[
                     models.PointStruct(
                         id=str(uuid.uuid4()),
-                        vector=embed_string(chunk, model),
+                        vector=embed_string(chunk),
                         payload=payload
                     )],
             )
 
 
-def add_csv(client: QdrantClient, file: Dict, model: AutoModel):
+def add_csv(file: Dict):
     text = read_csv(file["path"])
 
     chunks = chunk_document(preprocess_file(text))
@@ -129,15 +121,13 @@ def add_csv(client: QdrantClient, file: Dict, model: AutoModel):
             points=[
                 models.PointStruct(
                     id=str(uuid.uuid4()),
-                    vector=embed_string(chunk, model),
+                    vector=embed_string(chunk),
                     payload=payload
                 )],
         )
 
 
-def add_dir_embeddings(client: QdrantClient, dirs: List[Dict], model: AutoModel):   
-    if not model:
-        model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps")
+def add_dir_embeddings(dirs: List[Dict]):   
     points = []
 
     for dir in dirs:
@@ -148,12 +138,12 @@ def add_dir_embeddings(client: QdrantClient, dirs: List[Dict], model: AutoModel)
         points.extend([
             models.PointStruct(
                 id=str(uuid.uuid4()),
-                vector=embed_string(dir["name"], model),
+                vector=embed_string(dir["name"]),
                 payload=dir_name
             ),
             models.PointStruct(
                 id=str(uuid.uuid4()),
-                vector=embed_string(dir["path"], model),
+                vector=embed_string(dir["path"]),
                 payload=dir_path
             )
         ])
@@ -163,28 +153,26 @@ def add_dir_embeddings(client: QdrantClient, dirs: List[Dict], model: AutoModel)
         points=points)
     
 
-def add_file_embeddings(client: QdrantClient, files: List[Dict], model: AutoModel):   
-    if not model:
-        model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to("mps") 
+def add_file_embeddings(files: List[Dict]):   
     points = []
     max_file_size = 20_000_000  # 20MB
     for file in files:
         if file["size"] < max_file_size:
             type = file["type"]
             if type == "image":
-                add_image(client, file, model)
+                add_image(file)
             elif type == "text":
-                add_chunks(client, file, model)
+                add_chunks(file)
             elif type == "pdf":
-                add_pdf(client, file, model)
+                add_pdf(file)
             elif type == "doc":
-                add_doc(client, file, model)   
+                add_doc(file)   
             elif type == "ppt":
-                add_pptx(client, file, model)
+                add_pptx(file)
             elif type == "csv":
-                add_csv(client, file, model)
+                add_csv(file)
         else:
-            print(f"{file["path"]} is too large and it's content won't be embedded.")
+            print(f"{file['path']} is too large and it's content won't be embedded.")
 
         file_name = file.copy()
         file_name["type"] = "file_name"
@@ -193,12 +181,12 @@ def add_file_embeddings(client: QdrantClient, files: List[Dict], model: AutoMode
         points.extend([
             models.PointStruct(
                 id=str(uuid.uuid4()),
-                vector=embed_string(file["name"], model),
+                vector=embed_string(file["name"]),
                 payload=file_name
             ),
             models.PointStruct(
                 id=str(uuid.uuid4()),
-                vector=embed_string(file["path"], model),
+                vector=embed_string(file["path"]),
                 payload=file_path
             )
         ])
@@ -209,13 +197,13 @@ def add_file_embeddings(client: QdrantClient, files: List[Dict], model: AutoMode
     )
 
 
-def add_all(client: QdrantClient, files: List[Dict], dirs: List[Dict], model: AutoModel):
+def add_all(files: List[Dict], dirs: List[Dict]):
     print("Starting embedding")
     if files:
-        add_file_embeddings(client, files, model)
+        add_file_embeddings(files)
         print("Added files")
     if dirs:
-        add_dir_embeddings(client, dirs, model)
+        add_dir_embeddings(dirs)
         print("Added dirs")
     print("Finished embedding")
 

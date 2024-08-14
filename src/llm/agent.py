@@ -1,32 +1,38 @@
 from tools import *
 from llm.generate import initial_call
-from utils import parse_response, format_response
+from utils import parse_response
 
 
-def call_agent(client, query, llm, tokenizer, embedding_model):
-    response = initial_call(query, llm, tokenizer)
+tool_map = {
+    "open_file": open_file,
+    "goto_file": goto_file,
+    "move_file": move_file,
+    "copy_file": copy_file,
+    "rename_file": rename_file,
+    "delete_file": delete_file,
+    "local_search": local_search
+}
+
+
+def call_agent(query):
+    response = initial_call(query)
     parsed_response = parse_response(response)
     if parsed_response["type"] == "tool_call":
-        execute_tool(client, parsed_response, llm, tokenizer, embedding_model)
+        execute_tool(parsed_response)
     else:
-        print(format_response(parsed_response["content"]))
+        print(parsed_response["content"])
 
 
-def execute_tool(client, parsed_response, llm, tokenizer, embedding_model):
+def execute_tool(parsed_response):
     tool = parsed_response["tool"]
-    arg = parsed_response["args"]
-
-    tool_map = {
-        "open_file": lambda: open_file(client, arg["target"], embedding_model),
-        "goto_file": lambda: goto_file(client, arg["target"], embedding_model),
-        "move_file": lambda: move_file(client, arg["source"], arg["target"], embedding_model),
-        "copy_file": lambda: copy_file(client, arg["source"], arg["target"], embedding_model),
-        "rename_file": lambda: rename_file(client, arg["source"], arg["new_name"], embedding_model),
-        "delete_file": lambda: delete_file(client, arg["target"], embedding_model),
-        "local_search": lambda: local_search(client, arg["query"], llm, tokenizer, embedding_model)
-    }
-
+    args = parsed_response["args"]
     if tool in tool_map:
-        tool_map[tool]()
+        try:
+            tool_map[tool](**args)
+        except TypeError as e:
+            print(f"Error executing tool '{tool}': {str(e)}")
+            print("Please check the arguments provided.")
+        except Exception as e:
+            print(f"An error occurred while executing tool '{tool}': {str(e)}")
     else:
         print(f"Invalid tool name - {tool}")

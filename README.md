@@ -39,10 +39,10 @@ FileIntel is an open source file management application that allows you to manag
 ## 🔮 Future Plans
 
 1. Add multi file operations capabilities 📚.
-2. Use a small LLM instead of fixed commands 🧠.
-3. Look up specific information from your files 🔍.
+2. Improve RAG 🔍.
+3. Improve multimodal vector search 🧠.
 4. Make a simple GUI 🖼️.
-5. Optimize performance and handle more edge cases ⚡.
+5. Optimize performance ⚡.
 6. Support for Windows 🪟.
 
 Experience the future of file management with FileIntel - where your words become actions! ✨

@@ -15,9 +15,11 @@ FileIntel is an open source file management application that allows you to manag
 
 1. Clone the repo 📥.
 2. Install requirements 📦.
-3. Run `python src/main.py --dirs path1 path2 etc.` 🖥️
+3. Run `python src/main.py --dirs example/` 🖥️.
+4. Use `-llm` flag to use a llm for your queries for more freedom 🤖.
 4. Use `-r` or `--recreate` flag to recreate the file store 🔄.
 5. Start managing your files using natural language! 🎉
+
 
 ## 💻 System Requirements
 

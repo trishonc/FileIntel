@@ -4,3 +4,4 @@ __pycache__/
 tmp/
 .DS_Store
 nomic_embed.py
+gemma-2-2b-it-abliterated-Q4_K_L.gguf

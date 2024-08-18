@@ -1,7 +1,7 @@
 from qdrant_client import QdrantClient
 from transformers import AutoModel
 from utils import get_device
-from langchain_ollama import ChatOllama
+from llm.model import LLM
 
 
 client = None
@@ -19,7 +19,7 @@ def initialize_globals():
         embedding_model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to(device)
     if llm is None:
         print("Loading llm...")
-        llm = ChatOllama(model="gemma2:2b")
+        llm = LLM("gemma-2-2b-it-abliterated-Q4_K_L.gguf")
 
 
 initialize_globals()

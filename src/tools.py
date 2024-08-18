@@ -72,5 +72,4 @@ def local_search(query: str):
         context += chunk.payload["content"]
     response_generator = rag_call(query, context)
     for chunk in response_generator:
-        print(chunk.content, end="", flush=True)
-    print()
+        print(chunk["choices"][0]["text"], end="", flush=True)

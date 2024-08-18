@@ -7,7 +7,7 @@ def initial_call(query):
     sys_prompt = SYSTEM_PROMPT + query
     prompt = PROMPT_TEMPLATE.format(sys_prompt)
     response = llm.invoke(prompt)
-    return response.content
+    return response["choices"][0]["text"]
 
 
 def rag_call(query, context):

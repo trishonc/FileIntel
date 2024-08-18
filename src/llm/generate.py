@@ -4,14 +4,12 @@ from globals import llm
 
 
 def initial_call(query):
-    sys_prompt = SYSTEM_PROMPT + query
-    prompt = PROMPT_TEMPLATE.format(sys_prompt)
+    prompt = SYSTEM_PROMPT + query
     response = llm.invoke(prompt)
     return response["choices"][0]["text"]
 
 
 def rag_call(query, context):
-    rag_prompt = RAG_PROMPT.format(context, query)
-    prompt = PROMPT_TEMPLATE.format(rag_prompt)
+    prompt = RAG_PROMPT.format(context, query)
     response_generator = llm.stream(prompt)
     return response_generator

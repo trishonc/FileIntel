@@ -52,7 +52,6 @@ def formatting_prompts_func(examples):
         text = gemma_prompt.format(input, output) + EOS_TOKEN
         texts.append(text)
     return { "text" : texts }
-pass
 
 dataset = load_dataset("trishonc/agent_buff", split = "train")
 dataset = dataset.map(formatting_prompts_func, batched = True)

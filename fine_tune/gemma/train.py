@@ -18,7 +18,7 @@ model, tokenizer = FastLanguageModel.from_pretrained(
     load_in_4bit = load_in_4bit,
 )
 
-model = FastLanguageModel.get_peft_model(
+peft_model = FastLanguageModel.get_peft_model(
     model,
     r = 64, 
     target_modules = ["q_proj", "k_proj", "v_proj", "o_proj",
@@ -57,33 +57,33 @@ dataset = load_dataset("trishonc/agent_buff", split = "train")
 dataset = dataset.map(formatting_prompts_func, batched = True)
 dataset = dataset.train_test_split(test_size=0.1, seed=42)
 
+args = TrainingArguments(
+  output_dir = "main",
+  num_train_epochs = 1,
+  per_device_train_batch_size = 4,
+  weight_decay = 1e-3,
+  warmup_steps = 0.01,
+  logging_steps = 10,
+  logging_dir="logs",
+  save_strategy = "steps",
+  evaluation_strategy= "steps",
+  eval_steps = 1505,
+  save_steps = 1505,
+  learning_rate = 1e-4,
+  bf16 = True,
+  lr_scheduler_type = 'cosine',
+  seed = 3407, 
+)
+
 trainer = SFTTrainer(
-    model = model,
-    tokenizer = tokenizer,
-    train_dataset = dataset,
-    dataset_text_field = "text",
-    max_seq_length = max_seq_length,
-    dataset_num_proc = 2,
-    packing = False,
-    train_dataset=dataset['train'],
-    eval_dataset=dataset['test'],
-    args = TrainingArguments(
-        output_dir = "main",
-        num_train_epochs = 1,
-        per_device_train_batch_size = 16,
-        weight_decay = 1e-3,
-        warmup_steps = 0.01,
-        logging_steps = 10,
-        logging_dir="logs",
-        save_strategy = "steps",
-        evaluation_strategy= "steps",
-        eval_steps = 1505,
-        save_steps = 1505,
-        learning_rate = 1e-4,
-        bf16 = is_bfloat16_supported,
-        lr_scheduler_type = 'cosine',
-        seed = 3407, 
-        ),
+  model=peft_model,
+  max_seq_length = 3000,
+  dataset_text_field = "text",
+  tokenizer=tokenizer,
+  packing=False,
+  args=args,
+  train_dataset=dataset['train'],
+  eval_dataset=dataset['test'],
 )
 
 trainer_stats = trainer.train()
@@ -102,8 +102,8 @@ trainer_stats = trainer.train()
 # _ = model.generate(**inputs, streamer = text_streamer, max_new_tokens = 128)
 
 
-model.save_pretrained("lora_model") 
+peft_model.save_pretrained("lora_model") 
 tokenizer.save_pretrained("lora_model")
 
 # model.save_pretrained_merged("model", tokenizer, save_method = "merged_16bit",)
-model.push_to_hub_merged("trishonc/gemma-2-2b-it-buffed", tokenizer, save_method = "merged_16bit", token = os.getenv("HF_TOKEN"))
+peft_model.push_to_hub_merged("trishonc/gemma-2-2b-it-buffed", tokenizer, save_method = "merged_16bit", token = os.getenv("HF_TOKEN"))

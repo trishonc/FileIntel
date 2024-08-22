@@ -16,6 +16,7 @@ tool_map = {
 
 def call_agent(query):
     response = initial_call(query)
+    print(response)
     parsed_response = parse_response(response)
     if parsed_response["type"] == "tool_call":
         execute_tool(parsed_response)
@@ -25,7 +26,7 @@ def call_agent(query):
 
 def execute_tool(parsed_response):
     tool = parsed_response["tool"]
-    args = parsed_response["args"]
+    args = parsed_response["arguments"]
     if tool in tool_map:
         try:
             tool_map[tool](**args)

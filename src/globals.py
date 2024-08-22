@@ -19,7 +19,7 @@ def initialize_globals():
         embedding_model = AutoModel.from_pretrained('jinaai/jina-clip-v1', trust_remote_code=True).to(device)
     if llm is None:
         print("Loading llm...")
-        llm = LLM("gemma-2-2b-it-abliterated-Q4_K_L.gguf")
+        llm = LLM("gemma-2-2B-it-Q4_K_M.gguf")
 
 
 initialize_globals()

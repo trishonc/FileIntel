@@ -4,40 +4,34 @@ import torch
 
 def parse_response(response):
     response = response.replace("<end_of_turn>", "").strip()
+
+    json_match = re.search(r'```json\n(.*?)```', response, re.DOTALL)
     
-    tool_call_match = re.search(r'<tool_call>(.*?)</tool_call>', response, re.DOTALL)
-    if tool_call_match:
-        tool_call_content = tool_call_match.group(1).strip()
+    if json_match:
+        json_content = json_match.group(1)
         try:
-            parsed_json = json.loads(tool_call_content)
-            
-            if isinstance(parsed_json, list):
-                tool_data = parsed_json[0] if parsed_json else {}
-            else:
-                tool_data = parsed_json
-            
-            tool_name = tool_data.get('name')
-            arguments = tool_data.get('arguments', {})
-            
+            parsed_json = json.loads(json_content)
+
+            tool_name = parsed_json.get('tool')
+            args = parsed_json.get('arguments', {})
+
             return {
                 'type': 'tool_call',
                 'tool': tool_name,
-                'arguments': arguments
+                'arguments': args
             }
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON: {e}")
-        except Exception as e:
-            print(f"Error: {e}")
-        
-        return {
-            'type': 'normal_response',
-            'content': response
-        }
+            return {
+                'type': 'normal_response',
+                'content': response
+            }
     else:
         return {
             'type': 'normal_response',
             'content': response
         }
+
 
 
 def format_response(response):

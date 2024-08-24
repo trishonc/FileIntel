@@ -40,8 +40,12 @@ def copy_file(source: str, target: str):
 def rename_file(source: str, new_name: str):
     """Rename a file."""
     source = vec_search(source)
-    if confirm_operation(f"Are you sure you want to rename '{source.payload['path']}' to '{new_name}'?"):
-        new_file = os_rename_file(source.payload["path"], new_name)
+    old_file_path = source.payload["path"]
+    old_file_name, old_file_extension = os.path.splitext(old_file_path)
+    if not os.path.splitext(new_name)[1]:  
+        new_name += old_file_extension 
+    if confirm_operation(f"Are you sure you want to rename '{old_file_path}' to '{new_name}'?"):
+        new_file = os_rename_file(old_file_path, new_name)
         if new_file:
             move_items([new_file])
             return f"File renamed to {new_file}"

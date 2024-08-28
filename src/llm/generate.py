@@ -1,10 +1,9 @@
 from llm.prompt import *
-from tools import *
 from globals import llm
 
 
-def initial_call(query):
-    prompt = SYSTEM_PROMPT + query
+def initial_call(query, tool_list):
+    prompt = SYSTEM_PROMPT.format(tool_list, query)
     response = llm.invoke(prompt)
     return response["choices"][0]["text"]
 

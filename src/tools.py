@@ -2,14 +2,36 @@ from search import vec_search, rag_search
 from os_functions import *
 from update import move_items, remove_items, copy_files
 from utils import confirm_operation
+from langchain.tools import tool
+from langchain.pydantic_v1 import BaseModel, Field
 
 
+class TargetOnlyInput(BaseModel):
+    target: str = Field(description="should be the target file")
+
+
+class RenameInput(BaseModel):
+    source: str = Field(description="should be the source file")
+    new_name: str = Field(description="should be the new name for the file")
+
+
+class SourceAndTargetInput(BaseModel):
+    source: str = Field(description="should be the source file")
+    target: str = Field(description="should be the target location")
+
+
+class LocalSearchInput(BaseModel):
+    query: str = Field(description="should be the search query")
+
+
+@tool(args_schema=TargetOnlyInput)
 def open_file(target: str):
     """Open a file based on the given query."""
     file = vec_search(target).payload["path"]
     os_open_file(file)
 
 
+@tool(args_schema=SourceAndTargetInput)
 def move_file(source: str, target: str):
     """Move a file from source to target location."""
     source = vec_search(source)
@@ -24,6 +46,7 @@ def move_file(source: str, target: str):
         return "Can't move file to another file. Use rename instead."
 
 
+@tool(args_schema=SourceAndTargetInput)
 def copy_file(source: str, target: str):
     """Copy a file from source to target location."""
     source = vec_search(source)
@@ -37,6 +60,7 @@ def copy_file(source: str, target: str):
             return f"File copied to {new_file}"
 
 
+@tool(args_schema=RenameInput)
 def rename_file(source: str, new_name: str):
     """Rename a file."""
     source = vec_search(source)
@@ -51,12 +75,14 @@ def rename_file(source: str, new_name: str):
             return f"File renamed to {new_file}"
 
 
+@tool(args_schema=TargetOnlyInput)
 def goto_file(target: str):
     """Navigate to a file location."""
     file = vec_search(target)
     os_goto_file(file.payload["path"])
 
 
+@tool(args_schema=TargetOnlyInput)
 def delete_file(target: str):
     """Delete a file."""
     file = vec_search(target)
@@ -67,6 +93,7 @@ def delete_file(target: str):
         return f"File '{file_path}' has been deleted."
 
 
+@tool(args_schema=LocalSearchInput)
 def local_search(query: str):
     """Perform a local search using RAG."""
     from llm.generate import rag_call

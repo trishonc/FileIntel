@@ -134,7 +134,7 @@ def os_goto_file(path: str):
 
         os.system(f"open '{path}'")
         
-        print(f"Opened Finder at: {path}")
+        print(f"Navigated to: {path}")
 
     except Exception as e:
         print(f"An error occurred: {str(e)}")

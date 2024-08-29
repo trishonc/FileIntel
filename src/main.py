@@ -5,6 +5,7 @@ from update import update
 from llm.agent import call_agent
 from globals import *
 
+
 def main():
     parser = argparse.ArgumentParser(description="Qdrant vector database script")
     parser.add_argument('-d', '--dirs', nargs='+', help='Directories to process', default=[])
@@ -38,6 +39,7 @@ def main():
             call_agent(query)
         else:
             parse_query(query)
+
 
 if __name__ == "__main__":
     main()

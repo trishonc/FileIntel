@@ -6,6 +6,7 @@ import docx
 import csv
 from pptx import Presentation
 
+
 def read_pdf(path: str) -> List[Dict]:
     result = []
     
@@ -30,6 +31,7 @@ def read_pdf(path: str) -> List[Dict]:
         print(f"An unexpected error occurred: {str(e)}")
     
     return result
+
 
 def read_doc(path: str) -> str:
     if not os.path.exists(path):

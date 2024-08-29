@@ -2,6 +2,7 @@ import re
 import json
 import torch 
 
+
 def parse_response(response):
     response = response.replace("<end_of_turn>", "").strip()
     
@@ -38,7 +39,6 @@ def parse_response(response):
             'type': 'normal_response',
             'content': response
         }
-
 
 
 

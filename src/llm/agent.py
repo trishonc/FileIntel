@@ -30,8 +30,9 @@ def format_tools(tools):
 def call_agent(query):
     tool_list = format_tools(tools)
     response = initial_call(query, tool_list)
+    # print(response)
     parsed_response = parse_response(response)
-    print(parsed_response)
+    # print(parsed_response)
     if parsed_response["type"] == "tool_call":
         execute_tool(parsed_response)
     else:
@@ -39,7 +40,7 @@ def call_agent(query):
 
 
 def execute_tool(parsed_response):
-    tool = parsed_response["tool"]
+    tool = parsed_response["name"]
     args = parsed_response["arguments"]
     if tool in tool_map:
         try:

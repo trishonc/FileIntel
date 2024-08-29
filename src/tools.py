@@ -95,7 +95,7 @@ def delete_file(target: str):
 
 @tool(args_schema=LocalSearchInput)
 def local_search(query: str):
-    """Perform a local search using RAG."""
+    """Perform a local search on the user's computer."""
     from llm.generate import rag_call
     context = ""
     chunks = rag_search(query)

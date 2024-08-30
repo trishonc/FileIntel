@@ -38,6 +38,6 @@ def parse_query(query: str):
         cleaned_query = clean_query(query, ["delete"])
         delete_file(cleaned_query)
     elif "?" in query:
-        local_search(query)
+        file_search(query)
     else:
         print_usage_instructions()

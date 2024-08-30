@@ -12,10 +12,10 @@ tool_map = {
     "copy_file": copy_file,
     "rename_file": rename_file,
     "delete_file": delete_file,
-    "local_search": local_search
+    "file_search": file_search
 }
 
-tools = [open_file, goto_file, move_file, copy_file, rename_file, delete_file, local_search]
+tools = [open_file, goto_file, move_file, copy_file, rename_file, delete_file, file_search]
 
 
 def format_tools(tools):
@@ -30,9 +30,7 @@ def format_tools(tools):
 def call_agent(query):
     tool_list = format_tools(tools)
     response = initial_call(query, tool_list)
-    # print(response)
     parsed_response = parse_response(response)
-    # print(parsed_response)
     if parsed_response["type"] == "tool_call":
         execute_tool(parsed_response)
     else:
